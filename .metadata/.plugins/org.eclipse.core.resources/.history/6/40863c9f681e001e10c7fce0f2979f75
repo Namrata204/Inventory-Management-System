@@ -1,0 +1,19 @@
+package com.inventory.management.dto;
+
+public class OrderDto {
+    private Long id;
+    private Long productName;
+    private int quantity;
+    private String status;
+   
+    public OrderDto() {
+    }
+
+    public OrderDto(Long id, Long productId, int quantity, String status) {
+        this.id = id;
+        this.productName = productName;
+        this.quantity = quantity;
+        this.status = status;
+    }
+    
+}

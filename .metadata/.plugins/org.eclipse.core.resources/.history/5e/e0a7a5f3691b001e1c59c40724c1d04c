@@ -1,0 +1,95 @@
+package com.inventory.management.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.inventory.management.model.Product;
+import com.inventory.management.service.ProductService;
+
+import java.util.List;
+
+
+/**
+ * REST controller for managing products.
+ */
+@RestController
+@RequestMapping("/api/products")
+public class ProductController {
+    private final ProductService productService;
+
+    @Autowired
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    /**
+     * Creates a new product.
+     *
+     * @param product The product to create.
+     * @return The created product and HTTP status 201 (Created) if successful.
+     */
+    @PostMapping
+    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
+        Product createdProduct = productService.createProduct(product);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
+    }
+
+    /**
+     * Updates an existing product.
+     *
+     * @param productId The ID of the product to update.
+     * @param product   The updated product data.
+     * @return The updated product and HTTP status 200 (OK) if successful,
+     *         or HTTP status 404 (Not Found) if the product does not exist.
+     */
+    @PutMapping("/{productId}")
+    public ResponseEntity<Product> updateProduct(
+            @PathVariable Long productId,
+            @RequestBody Product product
+    ) {
+        Product updatedProduct = productService.updateProduct(productId, product);
+        if (updatedProduct != null) {
+            return ResponseEntity.ok(updatedProduct);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * Deletes a product.
+     *
+     * @param productId The ID of the product to delete.
+     * @return HTTP status 204 (No Content) if successful.
+     */
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long productId) {
+        productService.deleteProduct(productId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Retrieves a product by its ID.
+     *
+     * @param productId The ID of the product to retrieve.
+     * @return The retrieved product and HTTP status 200 (OK) if successful,
+     *         or HTTP status 404 (Not Found) if the product does not exist.
+     */
+    @GetMapping("/{productId}")
+    public ResponseEntity<Product> getProductById(@PathVariable Long productId) {
+        Product product = productService.getProductById(productId);
+        return ResponseEntity.ok(product);
+    }
+
+    /**
+     * Retrieves all products.
+     *
+     * @return A list of all products and HTTP status 200 (OK) if successful.
+     */
+    @GetMapping
+    public ResponseEntity<List<Product>> getAllProducts() {
+        List<Product> products = productService.getAllProducts();
+        return ResponseEntity.ok(products);
+    }
+}
+

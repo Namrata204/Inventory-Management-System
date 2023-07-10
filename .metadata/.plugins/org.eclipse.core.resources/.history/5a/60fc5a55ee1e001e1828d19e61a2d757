@@ -1,0 +1,224 @@
+package com.inventory.management.service;
+
+import com.inventory.management.dto.OrderDto;
+import com.inventory.management.dto.ProductDto;
+import com.inventory.management.exception.*;
+import com.inventory.management.model.Order;
+import com.inventory.management.repository.OrderRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Unit tests for the OrderServiceImpl class.
+ */
+class OrderServiceImplTest {
+    @Mock
+    private OrderRepository orderRepository;
+
+    @Mock
+    private RestTemplate restTemplate;
+
+    @InjectMocks
+    private OrderServiceImpl orderService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    /**
+     * Test case for creating a new order successfully.
+     */
+    @Test
+    void createOrder_ValidOrderDto_ReturnsCreatedOrderDto() {
+        // Arrange
+        OrderDto orderDto = new OrderDto();
+        orderDto.setProductQuantities(Collections.singletonMap("Product1", 10));
+
+        // Mock the restTemplate response
+        ProductDto productDto = new ProductDto();
+        productDto.setName("Product1");
+        productDto.setQuantity(20);
+        ResponseEntity<ProductDto> responseEntity = new ResponseEntity<>(productDto, HttpStatus.OK);
+        when(restTemplate.getForEntity(anyString(), eq(ProductDto.class))).thenReturn(responseEntity);
+
+        // Mock the orderRepository save method
+        Order savedOrder = new Order();
+        savedOrder.setId(1L);
+        when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
+
+        // Act
+        OrderDto createdOrderDto = orderService.createOrder(orderDto);
+
+        // Assert
+        assertNotNull(createdOrderDto);
+        assertEquals(savedOrder.getId(), createdOrderDto.getId());
+
+        verify(restTemplate, times(1)).getForEntity(anyString(), eq(ProductDto.class));
+        verify(orderRepository, times(1)).save(any(Order.class));
+    }
+
+    /**
+     * Test case for creating an order with insufficient stock.
+     * Expects an InsufficientStockException to be thrown.
+     */
+    @Test
+    void createOrder_InsufficientStock_ThrowsInsufficientStockException() {
+        // Arrange
+        OrderDto orderDto = new OrderDto();
+        orderDto.setProductQuantities(Collections.singletonMap("Product1", 10));
+
+        // Mock the restTemplate response
+        ProductDto productDto = new ProductDto();
+        productDto.setName("Product1");
+        productDto.setQuantity(5);
+        ResponseEntity<ProductDto> responseEntity = new ResponseEntity<>(productDto, HttpStatus.OK);
+        when(restTemplate.getForEntity(anyString(), eq(ProductDto.class))).thenReturn(responseEntity);
+
+        // Act and Assert
+        assertThrows(InsufficientStockException.class, () -> orderService.createOrder(orderDto));
+
+        verify(restTemplate, times(1)).getForEntity(anyString(), eq(ProductDto.class));
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    /**
+     * Test case for creating an order when the product is not found.
+     * Expects a ProductNotFoundException to be thrown.
+     */
+    @Test
+    void createOrder_ProductNotFound_ThrowsProductNotFoundException() {
+        // Arrange
+        OrderDto orderDto = new OrderDto();
+        orderDto.setProductQuantities(Collections.singletonMap("NonexistentProduct", 10));
+
+        // Mock the restTemplate response
+        ResponseEntity<ProductDto> responseEntity = new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        when(restTemplate.getForEntity(anyString(), eq(ProductDto.class))).thenReturn(responseEntity);
+
+        // Act and Assert
+        assertThrows(ProductNotFoundException.class, () -> orderService.createOrder(orderDto));
+
+        verify(restTemplate, times(1)).getForEntity(anyString(), eq(ProductDto.class));
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    /**
+     * Test case for getting an existing order by ID.
+     */
+    @Test
+    void getOrderById_ExistingOrderId_ReturnsOrderDto() {
+        // Arrange
+        Long orderId = 1L;
+        Order order = new Order();
+        order.setId(orderId);
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        // Act
+        OrderDto orderDto = orderService.getOrderById(orderId);
+
+        // Assert
+        assertNotNull(orderDto);
+        assertEquals(order.getId(), orderDto.getId());
+
+        verify(orderRepository, times(1)).findById(orderId);
+    }
+
+    /**
+     * Test case for getting a nonexistent order by ID.
+     * Expects an OrderNotFoundException to be thrown.
+     */
+    @Test
+    void getOrderById_NonexistentOrderId_ThrowsOrderNotFoundException() {
+        // Arrange
+        Long orderId = 1L;
+        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+
+        // Act and Assert
+        assertThrows(OrderNotFoundException.class, () -> orderService.getOrderById(orderId));
+
+        verify(orderRepository, times(1)).findById(orderId);
+    }
+
+    /**
+     * Test case for updating the status of an existing order.
+     */
+    @Test
+    void updateOrderStatus_ExistingOrderIdAndValidStatus_ReturnsUpdatedOrderDto() {
+        // Arrange
+        Long orderId = 1L;
+        String status = "Completed";
+        Order order = new Order();
+        order.setId(orderId);
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        // Mock the orderRepository save method
+        Order savedOrder = new Order();
+        savedOrder.setId(orderId);
+        savedOrder.setStatus(status);
+        when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
+
+        // Act
+        OrderDto updatedOrderDto = orderService.updateOrderStatus(orderId, status);
+
+        // Assert
+        assertNotNull(updatedOrderDto);
+        assertEquals(savedOrder.getId(), updatedOrderDto.getId());
+        assertEquals(savedOrder.getStatus(), updatedOrderDto.getStatus());
+
+        verify(orderRepository, times(1)).findById(orderId);
+        verify(orderRepository, times(1)).save(any(Order.class));
+    }
+
+    /**
+     * Test case for updating the status of a nonexistent order.
+     * Expects an OrderNotFoundException to be thrown.
+     */
+    @Test
+    void updateOrderStatus_NonexistentOrderId_ThrowsOrderNotFoundException() {
+        // Arrange
+        Long orderId = 1L;
+        String status = "Completed";
+        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+
+        // Act and Assert
+        assertThrows(OrderNotFoundException.class, () -> orderService.updateOrderStatus(orderId, status));
+
+        verify(orderRepository, times(1)).findById(orderId);
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    /**
+     * Test case for generating an invoice for an existing order.
+     * Expects a byte array to be returned.
+     */
+    @Test
+    void generateInvoice_ExistingOrderId_ReturnsInvoiceByteArray() {
+        // Arrange
+        Long orderId = 1L;
+        Order order = new Order();
+        order.setId(orderId);
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        // Act
+        byte[] invoice = orderService.generateInvoice(orderId);
+
+        // Assert
+//        assertNotNull(invoice);
+        // Additional assertions for the invoice generation logic can be added here
+
+        verify(orderRepository, times(1)).findById(orderId);
+    }
+
+}

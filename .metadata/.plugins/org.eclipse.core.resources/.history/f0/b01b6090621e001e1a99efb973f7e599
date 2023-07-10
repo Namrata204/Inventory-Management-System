@@ -1,0 +1,160 @@
+package com.inventory.management.controller;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import com.inventory.management.dto.ProductDto;
+import com.inventory.management.service.ProductService;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Unit tests for the ProductController class.
+ */
+class ProductControllerTest {
+    @Mock
+    private ProductService productService;
+
+    @InjectMocks
+    private ProductController productController;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    /**
+     * Test case for creating a product.
+     */
+    @Test
+    void createProduct_ValidProductDto_ReturnsCreatedProduct() {
+        // Arrange
+        ProductDto productDto = new ProductDto();
+        productDto.setName("Test Product");
+        productDto.setDescription("Test Description");
+        productDto.setPrice(10.0);
+        productDto.setQuantity(100);
+
+        ProductDto createdProductDto = new ProductDto();
+        createdProductDto.setId(1L);
+        createdProductDto.setName(productDto.getName());
+        createdProductDto.setDescription(productDto.getDescription());
+        createdProductDto.setPrice(productDto.getPrice());
+        createdProductDto.setQuantity(productDto.getQuantity());
+
+        when(productService.createProduct(productDto)).thenReturn(createdProductDto);
+
+        // Act
+        ResponseEntity<ProductDto> response = productController.createProduct(productDto);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(createdProductDto, response.getBody());
+
+        verify(productService, times(1)).createProduct(productDto);
+    }
+
+    /**
+     * Test case for updating an existing product.
+     */
+    @Test
+    void updateProduct_ExistingProductIdAndValidProductDto_ReturnsUpdatedProduct() {
+        // Arrange
+        Long productId = 1L;
+        ProductDto productDto = new ProductDto();
+        productDto.setName("Updated Test Product");
+        productDto.setDescription("Updated Test Description");
+        productDto.setPrice(20.0);
+        productDto.setQuantity(200);
+
+        ProductDto updatedProductDto = new ProductDto();
+        updatedProductDto.setId(productId);
+        updatedProductDto.setName(productDto.getName());
+        updatedProductDto.setDescription(productDto.getDescription());
+        updatedProductDto.setPrice(productDto.getPrice());
+        updatedProductDto.setQuantity(productDto.getQuantity());
+
+        when(productService.updateProduct(productId, productDto)).thenReturn(updatedProductDto);
+
+        // Act
+        ResponseEntity<ProductDto> response = productController.updateProduct(productId, productDto);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(updatedProductDto, response.getBody());
+
+        verify(productService, times(1)).updateProduct(productId, productDto);
+    }
+
+    /**
+     * Test case for deleting a product.
+     */
+    @Test
+    void deleteProduct_ExistingProductId_ReturnsNoContent() {
+        // Arrange
+        Long productId = 1L;
+
+        // Act
+        ResponseEntity<Void> response = productController.deleteProduct(productId);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+
+        verify(productService, times(1)).deleteProduct(productId);
+    }
+
+    @Test
+    void getProductById_ExistingProductId_ReturnsProduct() {
+        // Arrange
+        Long productId = 1L;
+        ProductDto productDto = new ProductDto();
+        productDto.setId(productId);
+        productDto.setName("Test Product");
+        productDto.setDescription("Test Description");
+        productDto.setPrice(10.0);
+        productDto.setQuantity(100);
+
+        when(productService.getProductById(productId)).thenReturn(productDto);
+
+        // Act
+        ResponseEntity<ProductDto> response = productController.getProductById(productId);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(productDto, response.getBody());
+
+        verify(productService, times(1)).getProductById(productId);
+    }
+
+    @Test
+    void getAllProducts_EmptyProductList_ReturnsEmptyList() {
+        // Arrange
+        List<ProductDto> productDtos = new ArrayList<>();
+
+        when(productService.getAllProducts()).thenReturn(productDtos);
+
+        // Act
+        ResponseEntity<List<ProductDto>> response = productController.getAllProducts();
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(productDtos, response.getBody());
+
+        verify(productService, times(1)).getAllProducts();
+    }
+}
+

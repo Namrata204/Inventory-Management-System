@@ -1,0 +1,78 @@
+package com.inventory.management.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * REST controller for managing orders.
+ */
+@RestController
+@RequestMapping("/api/orders")
+public class OrderController {
+    private final OrderService orderService;
+
+    @Autowired
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
+
+    /**
+     * Creates a new order.
+     *
+     * @param order The order to create.
+     * @return The created order and HTTP status 201 (Created) if successful.
+     */
+    @PostMapping
+    public ResponseEntity<Order> createOrder(@RequestBody Order order) {
+        Order createdOrder = orderService.createOrder(order);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder);
+    }
+
+    /**
+     * Updates the status of an existing order.
+     *
+     * @param orderId The ID of the order to update.
+     * @param status  The updated status as a request parameter.
+     * @return The updated order and HTTP status 200 (OK) if successful,
+     *         or HTTP status 404 (Not Found) if the order does not exist.
+     */
+    @PutMapping("/{orderId}")
+    public ResponseEntity<Order> updateOrderStatus(
+            @PathVariable Long orderId,
+            @RequestParam("status") String status
+    ) {
+        Order updatedOrder = orderService.updateOrderStatus(orderId, status);
+        if (updatedOrder != null) {
+            return ResponseEntity.ok(updatedOrder);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * Generates an invoice for a specified order.
+     *
+     * @param orderId The ID of the order to generate the invoice for.
+     * @return HTTP status 200 (OK) if successful.
+     */
+    @PostMapping("/{orderId}/invoice")
+    public ResponseEntity<Void> generateInvoice(@PathVariable Long orderId) {
+        orderService.generateInvoice(orderId);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Retrieves all orders.
+     *
+     * @return A list of all orders and HTTP status 200 (OK) if successful.
+     */
+    @GetMapping
+    public ResponseEntity<List<Order>> getAllOrders() {
+        List<Order> orders = orderService.getAllOrders();
+        return ResponseEntity.ok(orders);
+    }
+}
+

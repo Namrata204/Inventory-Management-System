@@ -1,0 +1,18 @@
+package com.inventory.management.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.inventory.management.model.Order;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+/**
+ * Repository interface for managing Order entities.
+ * Extends JpaRepository to inherit basic CRUD (Create, Read, Update, Delete) operations
+ * and other common database operations for the Order entity.
+ */
+public interface OrderRepository extends JpaRepository<Order, Long> {
+    // Additional custom methods (if required)
+}
+
+

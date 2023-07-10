@@ -1,0 +1,16 @@
+package com.inventory.management.exception;
+
+public class DuplicateProductException extends RuntimeException {
+
+	 /**
+     * Constructs a new DuplicateProductException with the specified error message.
+     *
+     * @param message The error message.
+     */
+	private static final long serialVersionUID = 1L;
+
+	public DuplicateProductException(String message) {
+        super(message);
+    }
+}
+

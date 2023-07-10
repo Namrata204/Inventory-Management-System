@@ -1,0 +1,92 @@
+package com.inventory.management.service;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class ProductServiceImplTest {
+
+    @Mock
+    private ProductRepository productRepository;
+
+    @InjectMocks
+    private ProductServiceImpl productService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void createProduct_ValidProductDto_ReturnsCreatedProductDto() {
+        // Arrange
+        ProductDto productDto = ProductDto.builder()
+                .name("Test Product")
+                .description("Test Description")
+                .price(10.0)
+                .quantity(100)
+                .build();
+
+        Product product = Product.builder()
+                .id(1L)
+                .name(productDto.getName())
+                .description(productDto.getDescription())
+                .price(productDto.getPrice())
+                .quantity(productDto.getQuantity())
+                .build();
+
+        when(productRepository.findByName(productDto.getName())).thenReturn(Optional.empty());
+        when(productRepository.save(any(Product.class))).thenReturn(product);
+
+        // Act
+        ProductDto createdProductDto = productService.createProduct(productDto);
+
+        // Assert
+        assertNotNull(createdProductDto);
+        assertEquals(product.getId(), createdProductDto.getId());
+        assertEquals(product.getName(), createdProductDto.getName());
+        assertEquals(product.getDescription(), createdProductDto.getDescription());
+        assertEquals(product.getPrice(), createdProductDto.getPrice());
+        assertEquals(product.getQuantity(), createdProductDto.getQuantity());
+
+        verify(productRepository, times(1)).findByName(productDto.getName());
+        verify(productRepository, times(1)).save(any(Product.class));
+    }
+
+    @Test
+    void createProduct_DuplicateProductName_ThrowsDuplicateProductException() {
+        // Arrange
+        ProductDto productDto = ProductDto.builder()
+                .name("Test Product")
+                .description("Test Description")
+                .price(10.0)
+                .quantity(100)
+                .build();
+
+        Product existingProduct = Product.builder()
+                .id(1L)
+                .name(productDto.getName())
+                .description(productDto.getDescription())
+                .price(productDto.getPrice())
+                .quantity(productDto.getQuantity())
+                .build();
+
+        when(productRepository.findByName(productDto.getName())).thenReturn(Optional.of(existingProduct));
+
+        // Act & Assert
+        assertThrows(DuplicateProductException.class, () -> productService.createProduct(productDto));
+
+        verify(productRepository, times(1)).findByName(productDto.getName());
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
+    // ... other test cases ...
+}
+

@@ -1,0 +1,132 @@
+package com.inventory.management.service;
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.inventory.management.dto.OrderDto;
+import com.inventory.management.dto.ProductDto;
+import com.inventory.management.exception.InsufficientStockException;
+import com.inventory.management.exception.ProductNotFoundException;
+import com.inventory.management.model.Order;
+import com.inventory.management.repository.OrderRepository;
+
+@Service
+public class OrderServiceImpl implements OrderService {
+    private final OrderRepository orderRepository;
+    private final RestTemplate restTemplate;
+    private final String productServiceUrl = "http://product-service/api/products";
+
+    @Autowired
+    public OrderServiceImpl(OrderRepository orderRepository, RestTemplate restTemplate) {
+        this.orderRepository = orderRepository;
+        this.restTemplate = restTemplate;
+    }
+
+    /**
+     * Create a new order.
+     *
+     * @param orderDto The order data.
+     * @return The created order as an OrderDto.
+     */
+    public OrderDto createOrder(OrderDto orderDto) {
+        // Retrieve product details from the Product Service
+        ResponseEntity<ProductDto> response = restTemplate.getForEntity(
+                productServiceUrl + "/" + orderDto.getProductName(),
+                ProductDto.class);
+
+        if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
+            throw new ProductNotFoundException("Product not found with ID: " + orderDto.getProductName());
+        }
+
+        ProductDto productDto = response.getBody();
+
+        if (productDto == null) {
+            throw new ProductNotFoundException("Product not found with ID: " + orderDto.getProductName());
+        }
+
+        // Perform inventory check
+        if (productDto.getQuantity() < orderDto.getQuantity()) {
+            throw new InsufficientStockException("Insufficient stock for the product: " + productDto.getName());
+        }
+
+        // Update stock levels in the Product Service
+        restTemplate.put(
+                productServiceUrl + "/" + productDto.getName() + "/update-stock?quantity=" + orderDto.getQuantity(),
+                null);
+
+        // Create the order
+        Order order = new Order();
+        order.setProductName(orderDto.getProductName());
+        order.setQuantity(orderDto.getQuantity());
+        // Set other order details
+
+        Order createdOrder = orderRepository.save(order);
+        return convertToOrderDto(createdOrder);
+    }
+
+    /**
+     * Get an order by ID.
+     *
+     * @param orderId The ID of the order.
+     * @return The order as an OrderDto if found,
+     *         or null if the order does not exist.
+     */
+    public OrderDto getOrderById(Long orderId) {
+        Optional<Order> optionalOrder = orderRepository.findById(orderId);
+        if (optionalOrder.isPresent()) {
+            Order order = optionalOrder.get();
+            return convertToOrderDto(order);
+        }
+        return null;
+    }
+
+    /**
+     * Update the status of an order.
+     *
+     * @param orderId The ID of the order.
+     * @param status  The new status of the order.
+     * @return The updated order as an OrderDto if successful,
+     *         or null if the order does not exist.
+     */
+    public OrderDto updateOrderStatus(Long orderId, String status) {
+        Optional<Order> optionalOrder = orderRepository.findById(orderId);
+        if (optionalOrder.isPresent()) {
+            Order order = optionalOrder.get();
+            order.setStatus(status);
+            Order updatedOrder = orderRepository.save(order);
+            return convertToOrderDto(updatedOrder);
+        }
+        return null;
+    }
+
+    /**
+     * Generate an invoice for an order.
+     *
+     * @param orderId The ID of the order.
+     * @return The invoice file as a byte array if successful,
+     *         or null if the order does not exist.
+     */
+    public byte[] generateInvoice(Long orderId) {
+        Optional<Order> optionalOrder = orderRepository.findById(orderId);
+        if (optionalOrder.isPresent()) {
+            Order order = optionalOrder.get();
+            // Generate the invoice logic here
+            return null; // Placeholder for invoice generation logic
+        }
+        return null;
+    }
+
+    private OrderDto convertToOrderDto(Order order) {
+        OrderDto orderDto = new OrderDto();
+        orderDto.setId(order.getId());
+        orderDto.setProductName(order.getProductName());
+        orderDto.setQuantity(order.getQuantity());
+        // Set other order details
+        return orderDto;
+    }
+}

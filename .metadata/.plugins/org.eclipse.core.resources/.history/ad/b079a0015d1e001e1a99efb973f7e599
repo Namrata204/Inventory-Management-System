@@ -1,0 +1,19 @@
+package com.inventory.management.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.inventory.management.model.Product;
+
+/**
+ * Repository interface for managing Product entities.
+ * Extends JpaRepository to inherit basic CRUD (Create, Read, Update, Delete) operations
+ * and other common database operations for the Product entity.
+ */
+public interface ProductRepository extends JpaRepository<Product, Long> {
+
+	Optional<Product> findByName(String name);
+    // Additional custom methods (if required)
+}
+

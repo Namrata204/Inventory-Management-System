@@ -1,0 +1,78 @@
+package com.inventory.management.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.inventory.management.model.Order;
+import com.inventory.management.repository.OrderRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Implementation of the OrderService interface.
+ * Provides methods for managing orders.
+ */
+@Service
+public class OrderServiceImpl implements OrderService {
+	
+    private final OrderRepository orderRepository;
+
+    @Autowired
+    public OrderServiceImpl(OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
+    }
+
+    /**
+     * Creates a new order.
+     *
+     * @param order The order to create.
+     * @return The created order.
+     */
+    @Override
+    public Order createOrder(Order order) {
+        // Perform inventory check with the Product service before accepting the order
+        // Update stock levels accordingly
+        // Perform payment processing and order fulfillment integration (if applicable)
+        return orderRepository.save(order);
+    }
+
+    /**
+     * Updates the status of an existing order.
+     *
+     * @param orderId The ID of the order to update.
+     * @param status  The updated status.
+     * @return The updated order.
+     */
+    @Override
+    public Order updateOrderStatus(Long orderId, String status) {
+        Optional<Order> optionalOrder = orderRepository.findById(orderId);
+        if (optionalOrder.isPresent()) {
+            Order existingOrder = optionalOrder.get();
+            existingOrder.setStatus(status);
+            return orderRepository.save(existingOrder);
+        }
+        return null; // or throw an exception
+    }
+
+    /**
+     * Generates an invoice for a specified order.
+     *
+     * @param orderId The ID of the order to generate the invoice for.
+     */
+    @Override
+    public void generateInvoice(Long orderId) {
+        // Generate invoice logic here
+    }
+
+    /**
+     * Retrieves all orders.
+     *
+     * @return A list of all orders.
+     */
+    @Override
+    public List<Order> getAllOrders() {
+        return orderRepository.findAll();
+    }
+}
+

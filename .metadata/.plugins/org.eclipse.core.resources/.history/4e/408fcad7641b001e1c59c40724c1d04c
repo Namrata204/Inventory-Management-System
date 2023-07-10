@@ -1,0 +1,40 @@
+package com.inventory.management.service;
+
+import java.util.List;
+
+/**
+ * Service interface for managing orders.
+ */
+public interface OrderService {
+    /**
+     * Creates a new order.
+     *
+     * @param order The order to create.
+     * @return The created order.
+     */
+    Order createOrder(Order order);
+    
+    /**
+     * Updates the status of an existing order.
+     *
+     * @param orderId The ID of the order to update.
+     * @param status  The updated status.
+     * @return The updated order.
+     */
+    Order updateOrderStatus(Long orderId, String status);
+    
+    /**
+     * Generates an invoice for a specified order.
+     *
+     * @param orderId The ID of the order to generate the invoice for.
+     */
+    void generateInvoice(Long orderId);
+    
+    /**
+     * Retrieves all orders.
+     *
+     * @return A list of all orders.
+     */
+    List<Order> getAllOrders();
+}
+

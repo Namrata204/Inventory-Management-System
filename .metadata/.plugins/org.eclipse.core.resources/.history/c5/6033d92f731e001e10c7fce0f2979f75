@@ -1,0 +1,28 @@
+package com.inventory.management.exception;
+
+package com.inventory.management.exception;
+
+/**
+ * Exception thrown by the OrderService to indicate a problem or error during order management operations.
+ */
+public class OrderServiceException extends RuntimeException {
+
+    /**
+     * Constructs a new OrderServiceException with the specified error message.
+     *
+     * @param message the error message
+     */
+    public OrderServiceException(String message) {
+        super(message);
+    }
+
+    /**
+     * Constructs a new OrderServiceException with the specified error message and cause.
+     *
+     * @param message the error message
+     * @param cause   the cause of the exception
+     */
+    public OrderServiceException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}

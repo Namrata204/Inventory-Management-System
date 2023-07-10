@@ -1,0 +1,88 @@
+package com.inventory.management.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.inventory.management.model.Product;
+import com.inventory.management.repository.ProductRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Implementation of the ProductService interface.
+ * Provides methods for managing products.
+ */
+@Service
+public class ProductServiceImpl implements ProductService {
+    private final ProductRepository productRepository;
+
+    @Autowired
+    public ProductServiceImpl(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+
+    /**
+     * Creates a new product.
+     *
+     * @param product The product to create.
+     * @return The created product.
+     */
+    @Override
+    public Product createProduct(Product product) {
+        return productRepository.save(product);
+    }
+
+    /**
+     * Updates an existing product.
+     *
+     * @param productId The ID of the product to update.
+     * @param product   The updated product data.
+     * @return The updated product.
+     */
+    @Override
+    public Product updateProduct(Long productId, Product product) {
+        Optional<Product> optionalProduct = productRepository.findById(productId);
+        if (optionalProduct.isPresent()) {
+            Product existingProduct = optionalProduct.get();
+            existingProduct.setName(product.getName());
+            existingProduct.setDescription(product.getDescription());
+            existingProduct.setPrice(product.getPrice());
+            existingProduct.setQuantity(product.getQuantity());
+            return productRepository.save(existingProduct);
+        }
+        return null; // or throw an exception
+    }
+
+    /**
+     * Deletes a product.
+     *
+     * @param productId The ID of the product to delete.
+     */
+    @Override
+    public void deleteProduct(Long productId) {
+        productRepository.deleteById(productId);
+    }
+
+    /**
+     * Retrieves a product by its ID.
+     *
+     * @param productId The ID of the product to retrieve.
+     * @return The retrieved product, or null if not found.
+     */
+    @Override
+    public Product getProductById(Long productId) {
+        Optional<Product> optionalProduct = productRepository.findById(productId);
+        return optionalProduct.orElse(null);
+    }
+
+    /**
+     * Retrieves all products.
+     *
+     * @return A list of all products.
+     */
+    @Override
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+}

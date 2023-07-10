@@ -1,0 +1,18 @@
+package com.inventory.management.service;
+
+import java.util.List;
+
+import com.inventory.management.model.Product;
+
+public interface ProductService {
+    Product createProduct(Product product);
+    
+    Product updateProduct(Long productId, Product product);
+    
+    void deleteProduct(Long productId);
+    
+    Product getProductById(Long productId);
+    
+    List<Product> getAllProducts();
+}
+

@@ -1,0 +1,23 @@
+package com.inventory.management.restconfiguration;
+
+import org.hibernate.type.AbstractSingleColumnStandardBasicType;
+import org.hibernate.type.descriptor.sql.VarcharTypeDescriptor;
+
+public class MapStringIntegerUserType extends AbstractSingleColumnStandardBasicType<Map<?, ?>> {
+
+    public MapStringIntegerUserType() {
+        super(VarcharTypeDescriptor.INSTANCE, new MapTypeDescriptor());
+    }
+
+    @Override
+    public String getName() {
+        return "mapStringInteger";
+    }
+
+    static class MapTypeDescriptor extends JsonTypeDescriptor {
+        MapTypeDescriptor() {
+            super(Map.class);
+        }
+    }
+}
+

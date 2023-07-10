@@ -1,0 +1,273 @@
+package com.inventory.management.service;
+
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import com.inventory.management.dto.ProductDto;
+import com.inventory.management.exception.DuplicateProductException;
+import com.inventory.management.exception.ProductNotFoundException;
+import com.inventory.management.model.Product;
+import com.inventory.management.repository.ProductRepository;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Unit tests for the ProductServiceImpl class.
+ */
+class ProductServiceImplTest {
+    @Mock
+    private ProductRepository productRepository;
+
+    @InjectMocks
+    private ProductServiceImpl productService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    /**
+     * Tests the createProduct method with a valid product DTO.
+     * Expects the created product DTO to match the expected product.
+     */
+    @Test
+    void createProduct_ValidProductDto_ReturnsCreatedProductDto() {
+    	// Arrange
+        ProductDto productDto = new ProductDto();
+        productDto.setName("Test Product");
+        productDto.setDescription("Test Description");
+        productDto.setPrice(10.0);
+        productDto.setQuantity(100);
+
+        Product product = new Product();
+        product.setId(1L);
+        product.setName(productDto.getName());
+        product.setDescription(productDto.getDescription());
+        product.setPrice(productDto.getPrice());
+        product.setQuantity(productDto.getQuantity());
+
+        when(productRepository.findByName(productDto.getName())).thenReturn(Optional.empty());
+        when(productRepository.save(any(Product.class))).thenReturn(product);
+
+        // Act
+        ProductDto createdProductDto = productService.createProduct(productDto);
+
+        // Assert
+        assertNotNull(createdProductDto);
+        assertEquals(product.getId(), createdProductDto.getId());
+        assertEquals(product.getName(), createdProductDto.getName());
+        assertEquals(product.getDescription(), createdProductDto.getDescription());
+        assertEquals(product.getPrice(), createdProductDto.getPrice());
+        assertEquals(product.getQuantity(), createdProductDto.getQuantity());
+
+        verify(productRepository, times(1)).findByName(productDto.getName());
+        verify(productRepository, times(1)).save(any(Product.class));
+    }
+
+    /**
+     * Tests the createProduct method with a duplicate product name.
+     * Expects a DuplicateProductException to be thrown.
+     */
+    @Test
+    void createProduct_DuplicateProductName_ThrowsDuplicateProductException() {
+        // Arrange
+        ProductDto productDto = new ProductDto();
+        productDto.setName("Test Product");
+        productDto.setDescription("Test Description");
+        productDto.setPrice(10.0);
+        productDto.setQuantity(100);
+
+        when(productRepository.findByName(productDto.getName())).thenReturn(Optional.of(new Product()));
+
+        // Act & Assert
+        assertThrows(DuplicateProductException.class, () -> productService.createProduct(productDto));
+
+        verify(productRepository, times(1)).findByName(productDto.getName());
+        verify(productRepository, never()).save(any(Product.class));
+    }
+    
+    /**
+     * Tests the updateProduct method with an existing product ID and a valid product DTO.
+     * Expects the updated product DTO to match the expected product.
+     */
+    @Test
+    void updateProduct_ExistingProductIdAndValidProductDto_ReturnsUpdatedProductDto() {
+        // Arrange
+        Long productId = 1L;
+        ProductDto productDto = new ProductDto();
+        productDto.setName("Updated Test Product");
+        productDto.setDescription("Updated Test Description");
+        productDto.setPrice(20.0);
+        productDto.setQuantity(200);
+
+        Product existingProduct = new Product();
+        existingProduct.setId(productId);
+        existingProduct.setName("Test Product");
+        existingProduct.setDescription("Test Description");
+        existingProduct.setPrice(10.0);
+        existingProduct.setQuantity(100);
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(existingProduct));
+        when(productRepository.save(any(Product.class))).thenReturn(existingProduct);
+
+        // Act
+        ProductDto updatedProductDto = productService.updateProduct(productId, productDto);
+
+        // Assert
+        assertNotNull(updatedProductDto);
+        assertEquals(productId, updatedProductDto.getId());
+        assertEquals(productDto.getName(), updatedProductDto.getName());
+        assertEquals(productDto.getDescription(), updatedProductDto.getDescription());
+        assertEquals(productDto.getPrice(), updatedProductDto.getPrice());
+        assertEquals(productDto.getQuantity(), updatedProductDto.getQuantity());
+
+        verify(productRepository, times(1)).findById(productId);
+        verify(productRepository, times(1)).save(any(Product.class));
+    }
+
+    /**
+     * Tests the updateProduct method with a non-existent product ID.
+     * Expects a ProductNotFoundException to be thrown.
+     */
+    @Test
+    void updateProduct_NonexistentProductId_ThrowsProductNotFoundException() {
+        // Arrange
+        Long productId = 1L;
+        ProductDto productDto = new ProductDto();
+        productDto.setName("Updated Test Product");
+        productDto.setDescription("Updated Test Description");
+        productDto.setPrice(20.0);
+        productDto.setQuantity(200);
+
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ProductNotFoundException.class, () -> productService.updateProduct(productId, productDto));
+
+        verify(productRepository, times(1)).findById(productId);
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
+    /**
+     * Tests the deleteProduct method with an existing product ID.
+     * Expects the product to be deleted successfully without throwing any exceptions.
+     */
+    @Test
+    void deleteProduct_ExistingProductId_ProductDeletedSuccessfully() {
+        // Arrange
+        Long productId = 1L;
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(new Product()));
+
+        // Act
+        assertDoesNotThrow(() -> productService.deleteProduct(productId));
+
+        verify(productRepository, times(1)).findById(productId);
+        verify(productRepository, times(1)).deleteById(productId);
+    }
+
+    /**
+     * Tests the deleteProduct method with a non-existent product ID.
+     * Expects a ProductNotFoundException to be thrown.
+     */
+    @Test
+    void deleteProduct_NonexistentProductId_ThrowsProductNotFoundException() {
+        // Arrange
+        Long productId = 1L;
+
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ProductNotFoundException.class, () -> productService.deleteProduct(productId));
+
+        verify(productRepository, times(1)).findById(productId);
+        verify(productRepository, never()).deleteById(productId);
+    }
+
+    /**
+     * Tests the getProductById method with an existing product ID.
+     * Expects the retrieved product DTO to match the expected product.
+     */
+    @Test
+    void getProductById_ExistingProductId_ReturnsProductDto() {
+        // Arrange
+        Long productId = 1L;
+        Product existingProduct = new Product();
+        existingProduct.setId(productId);
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(existingProduct));
+
+        // Act
+        ProductDto productDto = productService.getProductById(productId);
+
+        // Assert
+        assertNotNull(productDto);
+        assertEquals(productId, productDto.getId());
+
+        verify(productRepository, times(1)).findById(productId);
+    }
+
+    /**
+     * Tests the getProductById method with a non-existent product ID.
+     * Expects a ProductNotFoundException to be thrown.
+     */
+    @Test
+    void getProductById_NonexistentProductId_ThrowsProductNotFoundException() {
+        // Arrange
+        Long productId = 1L;
+
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ProductNotFoundException.class, () -> productService.getProductById(productId));
+
+        verify(productRepository, times(1)).findById(productId);
+    }
+
+    @Test
+    void getAllProducts_EmptyProductList_ReturnsEmptyProductDtoList() {
+        // Arrange
+        when(productRepository.findAll()).thenReturn(new ArrayList<>());
+
+        // Act
+        List<ProductDto> productDtos = productService.getAllProducts();
+
+        // Assert
+        assertNotNull(productDtos);
+        assertTrue(productDtos.isEmpty());
+
+        verify(productRepository, times(1)).findAll();
+    }
+
+    @Test
+    void getAllProducts_NonemptyProductList_ReturnsProductDtoList() {
+        // Arrange
+        List<Product> products = new ArrayList<>();
+        products.add(new Product());
+        products.add(new Product());
+
+        when(productRepository.findAll()).thenReturn(products);
+
+        // Act
+        List<ProductDto> productDtos = productService.getAllProducts();
+
+        // Assert
+        assertNotNull(productDtos);
+        assertEquals(products.size(), productDtos.size());
+
+        verify(productRepository, times(1)).findAll();
+    }
+    
+}
+
+
+

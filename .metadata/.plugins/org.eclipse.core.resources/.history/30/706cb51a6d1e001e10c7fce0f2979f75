@@ -1,0 +1,15 @@
+package com.inventory.management.exception;
+
+public class ProductNotFoundException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * Constructs a new ProductNotFoundException with the specified error message.
+     *
+     * @param message The error message.
+     */
+    public ProductNotFoundException(String message) {
+        super(message);
+    }
+}
