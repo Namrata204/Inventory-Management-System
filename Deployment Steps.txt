@@ -1,0 +1,64 @@
+To deploy Product service on Kubernetes, we can follow these steps:
+
+1. Build Docker Image:
+     docker build -t <image-name>:<tag> .
+   
+2. Push Docker Image to a Registry:
+     docker push <image-name>:<tag>
+
+3. Create a Kubernetes Deployment:
+   - Create a Kubernetes deployment manifest file (e.g., `product-deployment.yaml`) with the following content:
+     ```yaml
+     apiVersion: apps/v1
+     kind: Deployment
+     metadata:
+       name: product-service
+     spec:
+       replicas: 1
+       selector:
+         matchLabels:
+           app: product-service
+       template:
+         metadata:
+           labels:
+             app: product-service
+         spec:
+           containers:
+             - name: product-service
+               image: <image-name>:<tag>
+               ports:
+                 - containerPort: <container-port>
+     ```
+   - Replace `<image-name>:<tag>` with the name and tag of your Docker image.
+   - Replace `<container-port>` with the port number on which your Product service listens.
+
+4. Apply Deployment:
+   - Apply the deployment manifest to create the deployment in Kubernetes:
+     kubectl apply -f product-deployment.yaml     
+
+5. Expose the Service:
+   - If we want to expose Product service externally, we can create a Kubernetes service manifest file (e.g., `product-service.yaml`) with the following content:
+     ```yaml
+     apiVersion: v1
+     kind: Service
+     metadata:
+       name: product-service
+     spec:
+       type: LoadBalancer
+       ports:
+         - port: <service-port>
+           targetPort: <container-port>
+       selector:
+         app: product-service
+     ```
+   - Replace `<service-port>` with the desired port number for the service to be exposed externally.
+   - Replace `<container-port>` with the port number on which your Product service listens.
+
+6. Apply Service:
+   - Apply the service manifest to create the service in Kubernetes:
+     kubectl apply -f product-service.yaml
+  
+
+After executing these commands, Kubernetes will create the necessary deployment and service for the Product service. You can access the service using the exposed external IP and port provided by the LoadBalancer service, or the cluster IP and port if you are accessing it within the cluster.
+
+**************************we can follow same steps to deploy the Order Service***************************
